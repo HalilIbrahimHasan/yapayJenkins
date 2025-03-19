@@ -54,11 +54,22 @@ pipeline {
                                 ]
                             ]
                     
-                    // Ensure the report directory exists and has proper permissions
+                    // Prepare report directory
                     sh '''
                         mkdir -p test-output/SparkReport
                         chmod -R 755 test-output
-                        cp -r target/cucumber-reports/* test-output/SparkReport/ || true
+                        
+                        # Copy all report files
+                        if [ -d "target/cucumber-reports" ]; then
+                            cp -r target/cucumber-reports/* test-output/SparkReport/ || true
+                        fi
+                        
+                        # Copy any CSS and JS files
+                        find . -name "*.css" -exec cp {} test-output/SparkReport/ \\;
+                        find . -name "*.js" -exec cp {} test-output/SparkReport/ \\;
+                        
+                        # Ensure proper permissions
+                        chmod -R 755 test-output/SparkReport
                     '''
                     
                     // Publish HTML Report
@@ -70,14 +81,19 @@ pipeline {
                         reportFiles: 'Spark.html',
                         reportName: 'Extent Spark Report',
                         reportTitles: 'Test Automation Report',
-                        includes: '**/*'
+                        includes: '**/*.html,**/*.css,**/*.js,**/*.png,**/*.jpg',
+                        escapeUnderscores: true,
+                        allowMissing: false,
+                        keepAll: true,
+                        enableXHTML: true
                     ])
-                }
-            }
-            
-            post {
-                success {
-                    archiveArtifacts artifacts: 'test-output/**/*', fingerprint: true
+                    
+                    // Archive the reports
+                    archiveArtifacts([
+                        artifacts: 'test-output/**/*',
+                        fingerprint: true,
+                        allowEmptyArchive: true
+                    ])
                 }
             }
         }
