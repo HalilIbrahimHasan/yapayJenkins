@@ -2,6 +2,11 @@ package org.example.steps;
 
 import org.example.pages.GPTPage;
 import org.example.utils.DriverManager;
+import org.example.utils.ConfigReader;
+import org.junit.Assert;
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.When;
 import io.cucumber.java.en.Then;
@@ -11,6 +16,8 @@ public class ChatGPTSteps {
     
     private GPTPage gptPage;
     private String currentResponse;
+    private JsonObject jsonResponse;
+    private static final Gson gson = new Gson();
     
     public ChatGPTSteps() {
         gptPage = new GPTPage();
@@ -23,13 +30,24 @@ public class ChatGPTSteps {
     
     @And("I am logged in to ChatGPT")
     public void i_am_logged_in_to_chat_gpt() {
-        // This step would handle login, but for now we'll skip it
-        System.out.println("Login step - would be implemented based on authentication requirements");
+        String username = ConfigReader.getProperty("chatgpt.username");
+        String password = ConfigReader.getProperty("chatgpt.password");
+        
+        if (username == null || password == null) {
+            throw new RuntimeException("ChatGPT credentials not found in configuration");
+        }
+        
+        gptPage.login(username, password);
     }
     
     @When("I enter question {string}")
     public void i_enter_question(String question) {
-        gptPage.enterQuestion(question);
+        try {
+            Thread.sleep(2000); // Wait for page to be fully loaded
+            gptPage.enterQuestion(question);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
     
     @And("I submit the question")
@@ -40,25 +58,26 @@ public class ChatGPTSteps {
     @Then("I should see a response")
     public void i_should_see_a_response() {
         currentResponse = gptPage.getResponse();
+        Assert.assertFalse("Response should not be empty", currentResponse.isEmpty());
     }
     
     @And("I store the response as JSON")
     public void i_store_the_response_as_json() {
-        // For now, we'll just store the response as is
-        System.out.println("Response stored: " + currentResponse);
+        JsonObject responseObj = new JsonObject();
+        responseObj.addProperty("response", currentResponse);
+        jsonResponse = responseObj;
     }
     
     @And("I validate the response contains {string}")
     public void i_validate_the_response_contains(String expectedKeyword) {
-        // Basic validation
-        if (currentResponse != null && !currentResponse.toLowerCase().contains(expectedKeyword.toLowerCase())) {
-            throw new AssertionError("Response does not contain expected keyword: " + expectedKeyword);
-        }
+        Assert.assertTrue(
+            String.format("Response should contain '%s'", expectedKeyword),
+            currentResponse.toLowerCase().contains(expectedKeyword.toLowerCase())
+        );
     }
     
     @And("I display the response in the HTML report")
     public void i_display_the_response_in_the_html_report() {
-        // The response will be included in the Cucumber report automatically
-        System.out.println("Response displayed in report: " + currentResponse);
+        System.out.println("Response JSON: " + jsonResponse.toString());
     }
 } 
