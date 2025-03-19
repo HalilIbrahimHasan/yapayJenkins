@@ -62,23 +62,6 @@ pipeline {
                         # Copy all report files
                         cp -r test-output/SparkReport/* reports/html-report/ || true
                         
-                        # Create a wrapper HTML file
-                        cat << EOF > reports/html-report/index.html
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Test Report</title>
-    <style>
-        body { margin: 0; padding: 0; height: 100vh; }
-        iframe { width: 100%; height: 100%; border: none; }
-    </style>
-</head>
-<body>
-    <iframe src="Spark.html"></iframe>
-</body>
-</html>
-EOF
-                        
                         # Set permissions
                         chmod -R 755 reports
                         
@@ -87,16 +70,21 @@ EOF
                         ls -la reports/html-report/
                     '''
                     
-                    // Publish HTML Report
-                    publishHTML([
+                    // Publish HTML Report with sandbox attributes
+                    publishHTML(target: [
                         allowMissing: false,
                         alwaysLinkToLastBuild: true,
                         keepAll: true,
                         reportDir: 'reports/html-report',
-                        reportFiles: 'index.html',
+                        reportFiles: 'Spark.html',
                         reportName: 'Extent Report',
                         reportTitles: 'Test Automation Report',
-                        includes: '**/*'
+                        includes: '**/*',
+                        escapeUnderscores: true,
+                        allowMissing: false,
+                        keepAll: true,
+                        useWrapperFileDirectly: true,
+                        sandboxMode: true
                     ])
                     
                     // Archive the reports
