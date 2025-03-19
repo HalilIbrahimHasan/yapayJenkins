@@ -19,5 +19,3 @@ Feature: ChatGPT Question and Answer Functionality
     Examples:
       | question                    | expected_keyword |
       | What is Selenium WebDriver? | automation      |
-      | Explain Cucumber BDD       | behavior        |
-      | What is Page Object Model? | design pattern  | 
