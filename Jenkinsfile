@@ -54,25 +54,30 @@ pipeline {
                                 ]
                             ]
                     
-                    // Archive and Publish Spark Reports
-                    sh 'mkdir -p test-output/SparkReport'
-                    sh 'find . -name "Spark.html" -exec cp {} test-output/SparkReport/ \\;'
+                    // Ensure the report directory exists and has proper permissions
+                    sh '''
+                        mkdir -p test-output/SparkReport
+                        chmod -R 755 test-output
+                        cp -r target/cucumber-reports/* test-output/SparkReport/ || true
+                    '''
                     
-                    publishHTML(target: [
+                    // Publish HTML Report
+                    publishHTML([
                         allowMissing: false,
                         alwaysLinkToLastBuild: true,
                         keepAll: true,
                         reportDir: 'test-output/SparkReport',
                         reportFiles: 'Spark.html',
-                        reportName: 'Spark Report',
-                        reportTitles: 'Spark Test Report'
+                        reportName: 'Extent Spark Report',
+                        reportTitles: 'Test Automation Report',
+                        includes: '**/*'
                     ])
                 }
             }
             
             post {
-                always {
-                    archiveArtifacts artifacts: 'test-output/SparkReport/**/*', fingerprint: true
+                success {
+                    archiveArtifacts artifacts: 'test-output/**/*', fingerprint: true
                 }
             }
         }
@@ -80,7 +85,11 @@ pipeline {
     
     post {
         always {
-            cleanWs()
+            cleanWs(cleanWhenNotBuilt: false,
+                   deleteDirs: true,
+                   disableDeferredWipeout: true,
+                   notFailBuild: true,
+                   patterns: [[pattern: 'test-output/**', type: 'INCLUDE']])
         }
         success {
             echo 'Tests executed successfully!'
