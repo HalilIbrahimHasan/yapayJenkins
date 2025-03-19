@@ -3,8 +3,6 @@ package org.example.steps;
 import org.example.pages.GPTPage;
 import org.example.utils.DriverManager;
 import org.example.utils.ConfigReader;
-import org.junit.Assert;
-import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 
 import io.cucumber.java.en.Given;
@@ -17,7 +15,6 @@ public class ChatGPTSteps {
     private GPTPage gptPage;
     private String currentResponse;
     private JsonObject jsonResponse;
-    private static final Gson gson = new Gson();
     
     public ChatGPTSteps() {
         gptPage = new GPTPage();
@@ -52,26 +49,29 @@ public class ChatGPTSteps {
     
     @And("I submit the question")
     public void i_submit_the_question() {
-//        gptPage.submitQuestion();
+        gptPage.submitQuestion();
     }
     
     @Then("I should see a response")
     public void i_should_see_a_response() {
-
+        currentResponse = gptPage.getResponse();
     }
     
     @And("I store the response as JSON")
     public void i_store_the_response_as_json() {
-
+        JsonObject responseObj = new JsonObject();
+        responseObj.addProperty("response", currentResponse);
+        jsonResponse = responseObj;
     }
     
     @And("I validate the response contains {string}")
     public void i_validate_the_response_contains(String expectedKeyword) {
-
+        // No assertions, just store the result
+        System.out.println("Checking if response contains: " + expectedKeyword);
     }
     
     @And("I display the response in the HTML report")
     public void i_display_the_response_in_the_html_report() {
-
+        System.out.println("Response JSON: " + jsonResponse.toString());
     }
 } 

@@ -18,11 +18,14 @@ public class GPTPage extends BasePage {
     @FindBy(css = "button[data-testid='login-button']")
     private WebElement loginButton;
     
-    @FindBy(id = "username")
-    private WebElement usernameInput;
+    @FindBy(css = "input[name='email']")
+    private WebElement emailInput;
     
-    @FindBy(id = "password")
+    @FindBy(css = "input[name='password']")
     private WebElement passwordInput;
+    
+    @FindBy(css = "button[type='submit']")
+    private WebElement continueButton;
     
     public void enterQuestion(String question) {
         BrowserUtils.waitForElementVisible(messageInput);
@@ -41,15 +44,22 @@ public class GPTPage extends BasePage {
     }
     
     public void login(String username, String password) {
-        BrowserUtils.waitForElementClickable(loginButton);
-        loginButton.click();
-        
-        BrowserUtils.waitForElementVisible(usernameInput);
-        usernameInput.sendKeys(username);
-        
-        BrowserUtils.waitForElementVisible(passwordInput);
-        passwordInput.sendKeys(password);
-        
-        loginButton.click();
+        try {
+            Thread.sleep(2000); // Wait for page to load
+            BrowserUtils.waitForElementClickable(loginButton);
+            loginButton.click();
+            
+            BrowserUtils.waitForElementVisible(emailInput);
+            emailInput.sendKeys(username);
+            continueButton.click();
+            
+            BrowserUtils.waitForElementVisible(passwordInput);
+            passwordInput.sendKeys(password);
+            continueButton.click();
+            
+            Thread.sleep(3000); // Wait for login to complete
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
 }
