@@ -54,45 +54,47 @@ pipeline {
                                 ]
                             ]
                     
-                    // Prepare report directory
+                    // Create report directories
                     sh '''
-                        mkdir -p test-output/SparkReport
-                        chmod -R 755 test-output
+                        mkdir -p reports/html
+                        mkdir -p reports/spark
                         
-                        # Copy all report files
-                        if [ -d "target/cucumber-reports" ]; then
-                            cp -r target/cucumber-reports/* test-output/SparkReport/ || true
-                        fi
+                        # Copy report files
+                        cp -r test-output/SparkReport/* reports/spark/ || true
                         
-                        # Copy any CSS and JS files
-                        find . -name "*.css" -exec cp {} test-output/SparkReport/ \\;
-                        find . -name "*.js" -exec cp {} test-output/SparkReport/ \\;
+                        # Create index.html that redirects to the Spark report
+                        cat << EOF > reports/html/index.html
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="refresh" content="0; url='../spark/Spark.html'" />
+</head>
+<body>
+    <p>Please wait while you're redirected to the <a href="../spark/Spark.html">test report</a>.</p>
+</body>
+</html>
+EOF
                         
-                        # Ensure proper permissions
-                        chmod -R 755 test-output/SparkReport
+                        # Set permissions
+                        chmod -R 755 reports
                     '''
                     
-                    // Publish HTML Report
+                    // Publish HTML Reports
                     publishHTML([
                         allowMissing: false,
                         alwaysLinkToLastBuild: true,
                         keepAll: true,
-                        reportDir: 'test-output/SparkReport',
+                        reportDir: 'reports/spark',
                         reportFiles: 'Spark.html',
-                        reportName: 'Extent Spark Report',
-                        reportTitles: 'Test Automation Report',
-                        includes: '**/*.html,**/*.css,**/*.js,**/*.png,**/*.jpg',
-                        escapeUnderscores: true,
-                        allowMissing: false,
-                        keepAll: true,
-                        enableXHTML: true
+                        reportName: 'Extent Report',
+                        reportTitles: 'Test Automation Report'
                     ])
                     
-                    // Archive the reports
+                    // Archive artifacts
                     archiveArtifacts([
-                        artifacts: 'test-output/**/*',
+                        artifacts: 'reports/**/*',
                         fingerprint: true,
-                        allowEmptyArchive: true
+                        allowEmptyArchive: false
                     ])
                 }
             }
@@ -105,7 +107,7 @@ pipeline {
                    deleteDirs: true,
                    disableDeferredWipeout: true,
                    notFailBuild: true,
-                   patterns: [[pattern: 'test-output/**', type: 'INCLUDE']])
+                   patterns: [[pattern: 'reports/**', type: 'INCLUDE']])
         }
         success {
             echo 'Tests executed successfully!'
