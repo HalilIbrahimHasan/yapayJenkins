@@ -62,16 +62,22 @@ pipeline {
                         # Copy all report files
                         cp -r test-output/SparkReport/* reports/html-report/ || true
                         
-                        # Copy any CSS and JS files if they exist
-                        if [ -d "test-output/SparkReport/css" ]; then
-                            cp -r test-output/SparkReport/css reports/html-report/
-                        fi
-                        if [ -d "test-output/SparkReport/js" ]; then
-                            cp -r test-output/SparkReport/js reports/html-report/
-                        fi
-                        if [ -d "test-output/SparkReport/fonts" ]; then
-                            cp -r test-output/SparkReport/fonts reports/html-report/
-                        fi
+                        # Create a wrapper HTML file
+                        cat << EOF > reports/html-report/index.html
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Report</title>
+    <style>
+        body { margin: 0; padding: 0; height: 100vh; }
+        iframe { width: 100%; height: 100%; border: none; }
+    </style>
+</head>
+<body>
+    <iframe src="Spark.html"></iframe>
+</body>
+</html>
+EOF
                         
                         # Set permissions
                         chmod -R 755 reports
@@ -82,12 +88,12 @@ pipeline {
                     '''
                     
                     // Publish HTML Report
-                    publishHTML(target: [
+                    publishHTML([
                         allowMissing: false,
                         alwaysLinkToLastBuild: true,
                         keepAll: true,
                         reportDir: 'reports/html-report',
-                        reportFiles: 'Spark.html',
+                        reportFiles: 'index.html',
                         reportName: 'Extent Report',
                         reportTitles: 'Test Automation Report',
                         includes: '**/*'
