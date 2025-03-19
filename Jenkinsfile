@@ -54,15 +54,25 @@ pipeline {
                                 ]
                             ]
                     
-                    // Archive Spark Reports
-                    publishHTML([
+                    // Archive and Publish Spark Reports
+                    sh 'mkdir -p test-output/SparkReport'
+                    sh 'find . -name "Spark.html" -exec cp {} test-output/SparkReport/ \\;'
+                    
+                    publishHTML(target: [
                         allowMissing: false,
                         alwaysLinkToLastBuild: true,
                         keepAll: true,
                         reportDir: 'test-output/SparkReport',
                         reportFiles: 'Spark.html',
-                        reportName: 'Spark Report'
+                        reportName: 'Spark Report',
+                        reportTitles: 'Spark Test Report'
                     ])
+                }
+            }
+            
+            post {
+                always {
+                    archiveArtifacts artifacts: 'test-output/SparkReport/**/*', fingerprint: true
                 }
             }
         }
