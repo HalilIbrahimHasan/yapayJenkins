@@ -54,48 +54,52 @@ pipeline {
                                 ]
                             ]
                     
-                    // Create report directories
+                    // Create report directories and copy files
                     sh '''
-                        mkdir -p reports/html
-                        mkdir -p reports/spark
+                        # Create directories
+                        mkdir -p reports/html-report
                         
-                        # Copy report files
-                        cp -r test-output/SparkReport/* reports/spark/ || true
+                        # Copy all report files
+                        cp -r test-output/SparkReport/* reports/html-report/ || true
                         
-                        # Create index.html that redirects to the Spark report
-                        cat << EOF > reports/html/index.html
-<!DOCTYPE html>
-<html>
-<head>
-    <meta http-equiv="refresh" content="0; url='../spark/Spark.html'" />
-</head>
-<body>
-    <p>Please wait while you're redirected to the <a href="../spark/Spark.html">test report</a>.</p>
-</body>
-</html>
-EOF
+                        # Copy any CSS and JS files if they exist
+                        if [ -d "test-output/SparkReport/css" ]; then
+                            cp -r test-output/SparkReport/css reports/html-report/
+                        fi
+                        if [ -d "test-output/SparkReport/js" ]; then
+                            cp -r test-output/SparkReport/js reports/html-report/
+                        fi
+                        if [ -d "test-output/SparkReport/fonts" ]; then
+                            cp -r test-output/SparkReport/fonts reports/html-report/
+                        fi
                         
                         # Set permissions
                         chmod -R 755 reports
+                        
+                        # List contents for debugging
+                        echo "Contents of reports/html-report:"
+                        ls -la reports/html-report/
                     '''
                     
-                    // Publish HTML Reports
-                    publishHTML([
+                    // Publish HTML Report
+                    publishHTML(target: [
                         allowMissing: false,
                         alwaysLinkToLastBuild: true,
                         keepAll: true,
-                        reportDir: 'reports/spark',
+                        reportDir: 'reports/html-report',
                         reportFiles: 'Spark.html',
                         reportName: 'Extent Report',
-                        reportTitles: 'Test Automation Report'
+                        reportTitles: 'Test Automation Report',
+                        includes: '**/*'
                     ])
                     
-                    // Archive artifacts
-                    archiveArtifacts([
+                    // Archive the reports
+                    archiveArtifacts(
                         artifacts: 'reports/**/*',
                         fingerprint: true,
-                        allowEmptyArchive: false
-                    ])
+                        allowEmptyArchive: false,
+                        onlyIfSuccessful: false
+                    )
                 }
             }
         }
@@ -103,11 +107,17 @@ EOF
     
     post {
         always {
-            cleanWs(cleanWhenNotBuilt: false,
-                   deleteDirs: true,
-                   disableDeferredWipeout: true,
-                   notFailBuild: true,
-                   patterns: [[pattern: 'reports/**', type: 'INCLUDE']])
+            // Clean workspace but keep reports
+            cleanWs(
+                cleanWhenNotBuilt: false,
+                deleteDirs: true,
+                disableDeferredWipeout: true,
+                notFailBuild: true,
+                patterns: [
+                    [pattern: 'reports/**', type: 'INCLUDE'],
+                    [pattern: '**/target/**', type: 'INCLUDE']
+                ]
+            )
         }
         success {
             echo 'Tests executed successfully!'
